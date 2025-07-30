@@ -5,8 +5,10 @@ app = Flask(__name__)
 items = [
     {"id": 1, "name": "Item A", "description": "First item"},
     {"id": 2, "name": "Item B", "description": "Second item"},
-    {"id": 3, "name": "Item C", "description": "Third item"},
 ]
+
+# Simple counter for generating new IDs
+next_id = 3
 
 @app.errorhandler(404)
 def not_found(error):
@@ -41,6 +43,33 @@ def search_items():
         filtered_items = [item for item in filtered_items if lower_target_description in item["description"].lower()]
 
     return jsonify(filtered_items)
+
+@app.route("/items", methods=["POST"])
+def add_item():
+    global next_id
+
+    if not request.json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    if "name" not in request.json or "description" not in request.json:
+        return jsonify({"error": "Missing 'name' or 'description'"}), 400
+    # Exercises 1
+    if request.json["name"] == "" or request.json["description"] == "":
+        return jsonify({"error": "Bad Request."}), 400
+    # Exercises 2 any(): 
+    check_duplicate_name = not any(item["name"] == request.json["name"] for item in items)
+    if check_duplicate_name:
+        return jsonify({"error": "The input data already exists."}), 409
+    
+    
+    new_item = {
+        "id": next_id,
+        "name": request.json["name"],
+        "description": request.json["description"]
+    }
+
+    items.append(new_item)
+    next_id += 1
+    return jsonify(new_item), 201
 
 @app.route("/", methods=["GET"])
 def hello_world():
